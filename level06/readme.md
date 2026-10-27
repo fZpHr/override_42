@@ -1,4 +1,6 @@
+# level06 : keygen (reverse du serial)
 
+```c
 _BOOL4 __cdecl auth(char *s, int a2)
 {
   int i; // [esp+14h] [ebp-14h]
@@ -52,3 +54,6 @@ int __cdecl main(int argc, const char **argv, const char **envp)
   system("/bin/sh");
   return 0;
 }
+```
+
+le serial attendu est entierement calcule a partir du login (`v4 = (login[3] ^ 0x1337) + 6221293` puis `v4 += (v4 ^ login[i]) % 0x539` pour chaque caractere) : on rejoue ce calcul dans un keygen pour un login donne et on saisit le `v4` obtenu comme serial -> `auth` renvoie faux -> `system("/bin/sh")`.

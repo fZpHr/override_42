@@ -1,3 +1,6 @@
+# level00 : mot de passe en dur
+
+```c
 bool main(void)
 
 {
@@ -17,8 +20,7 @@ bool main(void)
   }
   return local_14[0] != 0x149c;
 }
-
-
+```
 
 0x149c = 5276
 
